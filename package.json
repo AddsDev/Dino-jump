@@ -1,0 +1,24 @@
+{
+  "name": "dino-runner-cicd",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Arcade Dino game designed to demonstrate CI/CD workflows and Docker containerization.",
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "dev": "npm run dev --workspace apps/web",
+    "build": "npm run build --workspace apps/web",
+    "test": "npm run test --workspace apps/web"
+  },
+  "keywords": [
+    "dino-runner",
+    "react",
+    "docker",
+    "github-actions",
+    "ci-cd"
+  ],
+  "author": "",
+  "license": "ISC"
+}
