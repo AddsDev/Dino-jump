@@ -38,3 +38,63 @@ La interfaz gráfica y el motor del juego se construyeron utilizando un conjunto
   - *Share Tech Mono*: Utilizada para los números y marcadores digitales, brindando una estética retro-futurista perfecta para un tablero arcade.
 * **LocalStorage API**: Mecanismo del navegador para la persistencia local de los nombres de los jugadores y sus respectivos récords de puntuación de forma offline.
 * **Vitest & React Testing Library**: Suite de pruebas unitarias y de integración para garantizar que las lógicas de guardado, inicialización del juego y detección de colisiones funcionen correctamente.
+
+---
+
+## 🐳 Ejecución con Docker
+
+El proyecto incluye soporte completo para ejecutarse de manera contenerizada, empaquetando la aplicación en un servidor web Nginx de producción de alto rendimiento.
+
+### Requisitos Previos
+*   [Docker](https://www.docker.com/get-started) instalado y ejecutándose en tu máquina.
+*   [Docker Compose](https://docs.docker.com/compose/install/) instalado (incluido por defecto en Docker Desktop).
+
+### 🚀 Pasos para Ejecutar con Docker Compose
+
+1. **Construir y levantar el contenedor**:
+   Ejecuta el siguiente comando en la raíz del proyecto para descargar las dependencias, compilar el código de React en una imagen multi-etapa y levantar el servidor web Nginx:
+   ```bash
+   docker compose -f docker-compose.dev.yml up --build -d
+   ```
+   *Nota: El parámetro `-d` inicia el servicio en segundo plano (detached mode).*
+
+2. **Acceder a la aplicación**:
+   Una vez completada la construcción, abre tu navegador web favorito y accede a:
+   👉 **`http://localhost:5173`**
+
+3. **Verificar el estado del contenedor**:
+   Puedes comprobar que el servicio está ejecutándose correctamente con:
+   ```bash
+   docker compose -f docker-compose.dev.yml ps
+   ```
+
+4. **Ver los logs de ejecución**:
+   Para visualizar las peticiones o logs del servidor web Nginx:
+   ```bash
+   docker compose -f docker-compose.dev.yml logs -f
+   ```
+
+5. **Detener y limpiar los contenedores**:
+   Para apagar el contenedor y limpiar los recursos creados:
+   ```bash
+   docker compose -f docker-compose.dev.yml down
+   ```
+
+### 🛠️ Ejecución directa con Docker (Sin Compose)
+
+Si prefieres construir y ejecutar la imagen directamente utilizando el CLI de Docker:
+
+1. **Construir la imagen de Docker**:
+   ```bash
+   docker build -t dino-web:local -f apps/web/Dockerfile .
+   ```
+
+2. **Ejecutar el contenedor**:
+   ```bash
+   docker run -d -p 5173:80 --name dino-web-container dino-web:local
+   ```
+
+3. **Detener el contenedor**:
+   ```bash
+   docker stop dino-web-container && docker rm dino-web-container
+   ```
