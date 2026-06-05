@@ -16,7 +16,9 @@
     "lint": "npm run lint --workspaces",
     "prisma:generate": "npm run prisma:generate --workspace apps/api",
     "prisma:migrate": "npm run prisma:migrate --workspace apps/api",
-    "prisma:deploy": "npm run prisma:deploy --workspace apps/api"
+    "prisma:deploy": "npm run prisma:deploy --workspace apps/api",
+    "e2e": "playwright test --config=tests/e2e/playwright.config.ts",
+    "e2e:install": "playwright install --with-deps chromium"
   },
   "keywords": [
     "dino-runner",
@@ -26,5 +28,8 @@
     "ci-cd"
   ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
+  }
 }
