@@ -1,6 +1,11 @@
 # Stage 1: Compiling TypeScript/Vite bundle
 FROM node:20-alpine AS builder
 
+# Build-time only. The web bundle is fully static, so the URL of the
+# REST API is baked in at build time by Vite (VITE_*-prefixed env vars).
+ARG VITE_API_BASE_URL=http://localhost:3001
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 WORKDIR /app
 
 # Copy root workspace configurations
