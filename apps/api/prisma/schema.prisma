@@ -1,0 +1,21 @@
+// Prisma schema for Dino Runner API
+// Iteration 2: scores module
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Score {
+  id        String   @id @default(uuid())
+  nick      String   @unique
+  score     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("scores")
+}
