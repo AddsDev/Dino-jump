@@ -1,0 +1,68 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: dino-db-qa
+    environment:
+      POSTGRES_USER: dino
+      POSTGRES_PASSWORD: dino
+      POSTGRES_DB: dino_qa
+    ports:
+      - "5433:5432"
+    volumes:
+      - dino-db-qa-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dino -d dino_qa"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migrate
+    container_name: dino-migrate-qa
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://dino:dino@db:5432/dino_qa
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runner
+    container_name: dino-api-qa
+    environment:
+      NODE_ENV: production
+      APP_ENV: qa
+      API_PORT: 3002
+      DATABASE_URL: postgresql://dino:dino@db:5432/dino_qa
+      CORS_ORIGIN: http://localhost:5174
+    ports:
+      - "3002:3002"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:3002
+    container_name: dino-web-qa
+    ports:
+      - "5174:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  dino-db-qa-data:
