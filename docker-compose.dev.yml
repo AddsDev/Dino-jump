@@ -16,10 +16,25 @@ services:
       timeout: 3s
       retries: 10
 
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migrate
+    container_name: dino-migrate-dev
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://dino:dino@db:5432/dino_dev
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+      target: runner
     container_name: dino-api-dev
     environment:
       NODE_ENV: development
@@ -32,6 +47,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   web:
