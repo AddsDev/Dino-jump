@@ -4,6 +4,13 @@ import App from '../App';
 import ScoreBoard from '../game/components/ScoreBoard';
 import GameOverModal from '../game/components/GameOverModal';
 
+const okResponse = (body: unknown) =>
+  ({
+    ok: true,
+    status: 200,
+    json: async () => body,
+  }) as Response;
+
 describe('React Component Rendering & Transitions', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -50,9 +57,11 @@ describe('React Component Rendering & Transitions', () => {
     expect(high.textContent).toBe('00250');
   });
 
-  it('should prompt validation errors for short nicknames inside the GameOverModal', () => {
+  it('should prompt validation errors for short nicknames inside the GameOverModal', async () => {
     const onRestartMock = vi.fn();
     const onBackToMenuMock = vi.fn();
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
 
     render(
       <GameOverModal 
@@ -77,20 +86,31 @@ describe('React Component Rendering & Transitions', () => {
     fireEvent.click(submitBtn);
 
     // Assert warning message
-    const errorMsg = screen.getByTestId('error-message');
+    const errorMsg = await screen.findByTestId('error-message');
     expect(errorMsg).toBeInTheDocument();
     expect(errorMsg.textContent).toContain('between 3 and 30 characters');
+
+    // No API call should be made on validation failure
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('should display success saving state inside the GameOverModal', () => {
+  it('should display success saving state inside the GameOverModal', async () => {
     const onRestartMock = vi.fn();
     const onBackToMenuMock = vi.fn();
+    const onScoreSubmitted = vi.fn();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        okResponse({ nick: 'CYBER_PLAYER', score: 120, message: 'Score registered successfully' })
+      )
+    );
 
     render(
       <GameOverModal 
         score={120} 
         onRestart={onRestartMock} 
         onBackToMenu={onBackToMenuMock} 
+        onScoreSubmitted={onScoreSubmitted}
       />
     );
 
@@ -102,8 +122,9 @@ describe('React Component Rendering & Transitions', () => {
     fireEvent.click(submitBtn);
 
     // Success indicator should be rendered
-    const successMsg = screen.getByTestId('success-message');
+    const successMsg = await screen.findByTestId('success-message');
     expect(successMsg).toBeInTheDocument();
     expect(successMsg.textContent).toContain('registered');
+    expect(onScoreSubmitted).toHaveBeenCalled();
   });
 });
