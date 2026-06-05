@@ -1,11 +1,68 @@
-version: '3.8'
-
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: dino-db-dev
+    environment:
+      POSTGRES_USER: dino
+      POSTGRES_PASSWORD: dino
+      POSTGRES_DB: dino_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - dino-db-dev-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dino -d dino_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migrate
+    container_name: dino-migrate-dev
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://dino:dino@db:5432/dino_dev
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runner
+    container_name: dino-api-dev
+    environment:
+      NODE_ENV: development
+      APP_ENV: dev
+      API_PORT: 3001
+      DATABASE_URL: postgresql://dino:dino@db:5432/dino_dev
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
     container_name: dino-web-dev
+    environment:
+      VITE_API_BASE_URL: http://localhost:3001
     ports:
       - "5173:80"
-    restart: always
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  dino-db-dev-data:

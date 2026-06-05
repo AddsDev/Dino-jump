@@ -3,6 +3,10 @@ node_modules/
 jspm_packages/
 web_modules/
 
+# API build artifacts
+apps/api/dist/
+apps/api/coverage/
+
 # Build outputs
 dist/
 dist-ssr/
