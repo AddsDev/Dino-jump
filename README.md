@@ -234,24 +234,28 @@ npm run dev          # http://localhost:5173
 
 ## 🐳 Ejecución con Docker Compose
 
-Levanta los 3 servicios (`web`, `api`, `db`) en un solo comando:
+Levanta los servicios (`web`, `api`, `db`, `migrate`) en un solo comando:
 
 ```bash
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-| Servicio | URL local |
-|---|---|
-| Frontend | http://localhost:5173 |
-| API | http://localhost:3001 |
-| PostgreSQL | localhost:5432 |
+| Servicio | Tipo | URL local |
+|---|---|---|
+| `db` | PostgreSQL 16 (persistente) | `localhost:5432` |
+| `migrate` | One-shot: `prisma migrate deploy` | — |
+| `api` | API REST Node/Express | http://localhost:3001 |
+| `web` | Frontend Vite + Nginx | http://localhost:5173 |
+
+> El servicio `migrate` corre una sola vez, aplica las migraciones pendientes y termina (`Exit 0`). El servicio `api` lo espera con `condition: service_completed_successfully` para arrancar.
 
 Comandos útiles:
 ```bash
-docker compose -f docker-compose.dev.yml ps        # estado de los servicios
-docker compose -f docker-compose.dev.yml logs -f   # logs en vivo
-docker compose -f docker-compose.dev.yml down      # detener
-docker compose -f docker-compose.dev.yml down -v   # detener y borrar volúmenes
+docker compose -f docker-compose.dev.yml ps                 # estado de los servicios
+docker compose -f docker-compose.dev.yml logs -f            # logs en vivo
+docker compose -f docker-compose.dev.yml logs migrate       # ver qué migración aplicó
+docker compose -f docker-compose.dev.yml down               # detener
+docker compose -f docker-compose.dev.yml down -v            # detener y borrar volúmenes (BD limpia)
 ```
 
 ### 🛠️ Construcción directa con Docker (sin Compose)
@@ -262,10 +266,71 @@ docker build -t dino-web:local -f apps/web/Dockerfile .
 docker run -d -p 5173:80 --name dino-web-container dino-web:local
 
 # API
-docker build -t dino-api:local -f apps/api/Dockerfile .
+docker build -t dino-api:local --target runner -f apps/api/Dockerfile .
 docker run -d -p 3001:3001 --name dino-api-container \
   -e DATABASE_URL=postgresql://dino:dino@host.docker.internal:5432/dino_dev \
   dino-api:local
+
+# Migraciones (one-shot)
+docker build -t dino-migrate:local --target migrate -f apps/api/Dockerfile .
+docker run --rm \
+  -e DATABASE_URL=postgresql://dino:dino@host.docker.internal:5432/dino_dev \
+  dino-migrate:local
+```
+
+---
+
+## 🗄️ Migraciones de base de datos
+
+Las migraciones de Prisma viven versionadas en `apps/api/prisma/migrations/` y forman parte del código fuente.
+
+### Estructura
+
+```txt
+apps/api/prisma/
+├── schema.prisma
+├── migration_lock.toml
+└── migrations/
+    └── 20260604000000_init/
+        └── migration.sql
+```
+
+### ¿Cómo se ejecutan?
+
+| Ambiente | Mecanismo | Comando / servicio |
+|---|---|---|
+| `dev` (local con Compose) | Servicio `migrate` one-shot | `docker compose up migrate` |
+| `dev` (local sin Docker) | Script npm | `npm run prisma:deploy` |
+| CI (pull request / push) | Paso explícito en `ci.yml` | `npm run prisma:deploy` + `prisma migrate status` |
+| `qa` / `prod` (futuro) | Job de GitHub Actions | Workflow dedicado `deploy-qa.yml` / `deploy-prod.yml` |
+
+> Las migraciones **no** se ejecutan dentro del contenedor del API. Eso evita race conditions al escalar horizontalmente y separa "aplicar schema" de "desplegar app".
+
+### ¿Cómo agregar una nueva migración?
+
+Cuando cambies `schema.prisma` (nuevos modelos, columnas, índices, etc.):
+
+```bash
+cd apps/api
+# Crea el archivo SQL en prisma/migrations/<timestamp>_<nombre>/migration.sql
+# y lo aplica a la BD local
+npm run prisma:migrate -- --name <nombre_descriptivo>
+```
+
+Convenciones:
+- Nunca edites una migración que ya esté aplicada en `main`.
+- Una migración = un cambio lógico (ej: `add_email_to_scores`, `create_players_table`).
+- Commitea el SQL **junto** con el cambio de `schema.prisma` en el mismo PR.
+- El CI ejecuta `prisma migrate status` para detectar drift (schema ≠ migraciones aplicadas).
+
+### ¿Cómo aplicarlas manualmente (emergencias)?
+
+```bash
+# Aplica todas las migraciones pendientes
+npm run prisma:deploy --workspace apps/api
+
+# Ver el estado (qué migraciones están aplicadas / pendientes)
+npx prisma migrate status --schema=apps/api/prisma/schema.prisma
 ```
 
 ---
