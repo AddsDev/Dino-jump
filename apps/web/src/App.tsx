@@ -4,6 +4,20 @@ import { GamePage } from './pages/GamePage';
 
 export const App: React.FC = () => {
   const [activeScreen, setActiveScreen] = useState<'welcome' | 'game'>('welcome');
+  const [leaderboardRefreshKey, setLeaderboardRefreshKey] = useState(0);
+
+  const goToGame = () => {
+    setActiveScreen('game');
+  };
+
+  const goToWelcome = () => {
+    setLeaderboardRefreshKey((n) => n + 1);
+    setActiveScreen('welcome');
+  };
+
+  const handleScoreSubmitted = () => {
+    setLeaderboardRefreshKey((n) => n + 1);
+  };
 
   return (
     <div 
@@ -90,9 +104,12 @@ export const App: React.FC = () => {
       {/* Main Screen Router */}
       <main style={{ flex: 1 }}>
         {activeScreen === 'welcome' ? (
-          <WelcomePage onStartGame={() => setActiveScreen('game')} />
+          <WelcomePage onStartGame={goToGame} refreshKey={leaderboardRefreshKey} />
         ) : (
-          <GamePage onBackToMenu={() => setActiveScreen('welcome')} />
+          <GamePage
+            onBackToMenu={goToWelcome}
+            onScoreSubmitted={handleScoreSubmitted}
+          />
         )}
       </main>
     </div>

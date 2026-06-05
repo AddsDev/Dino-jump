@@ -4,12 +4,14 @@ import { localScoreStorage } from '../game/storage/localScoreStorage';
 import { ScoreBoard } from '../game/components/ScoreBoard';
 import { GameCanvas } from '../game/components/GameCanvas';
 import { GameOverModal } from '../game/components/GameOverModal';
+import { DINO_TEST_GAMEOVER_EVENT } from '../test/testHook';
 
 interface GamePageProps {
   onBackToMenu: () => void;
+  onScoreSubmitted?: () => void;
 }
 
-export const GamePage: React.FC<GamePageProps> = ({ onBackToMenu }) => {
+export const GamePage: React.FC<GamePageProps> = ({ onBackToMenu, onScoreSubmitted }) => {
   const [gameStatus, setGameStatus] = useState<GameStatus>('idle');
   const [currentScore, setCurrentScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
@@ -20,6 +22,25 @@ export const GamePage: React.FC<GamePageProps> = ({ onBackToMenu }) => {
     if (scores.length > 0) {
       setHighScore(scores[0].score);
     }
+  }, []);
+
+  // Dev-only test hook: allow Playwright to force a game over via a
+  // custom DOM event. No-op in production (the listener is harmless
+  // but the event is never dispatched outside dev / E2E).
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+    const handler = (event: Event) => {
+      const custom = event as CustomEvent<{ score: number }>;
+      const score = Number(custom.detail?.score ?? 0);
+      if (Number.isFinite(score) && score >= 0) {
+        handleGameOver(Math.floor(score));
+      }
+    };
+    window.addEventListener(DINO_TEST_GAMEOVER_EVENT, handler);
+    return () => window.removeEventListener(DINO_TEST_GAMEOVER_EVENT, handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleStartGame = () => {
@@ -108,10 +129,11 @@ export const GamePage: React.FC<GamePageProps> = ({ onBackToMenu }) => {
 
       {/* Game Over Popup Modal */}
       {gameStatus === 'game-over' && (
-        <GameOverModal 
-          score={currentScore} 
-          onRestart={handleRestart} 
-          onBackToMenu={onBackToMenu} 
+        <GameOverModal
+          score={currentScore}
+          onRestart={handleRestart}
+          onBackToMenu={onBackToMenu}
+          onScoreSubmitted={onScoreSubmitted}
         />
       )}
     </div>
