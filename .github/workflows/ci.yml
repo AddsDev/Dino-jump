@@ -83,6 +83,10 @@ jobs:
       - name: Apply Prisma Migrations
         run: npm run prisma:deploy
 
+      - name: Verify Prisma Schema Has No Drift
+        run: npx prisma migrate status
+        working-directory: apps/api
+
       - name: Verify API Typescript & Compilation
         run: npm run build --workspace apps/api
 
