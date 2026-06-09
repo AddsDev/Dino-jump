@@ -20,8 +20,8 @@ pipeline {
                 echo '=== Instalando dependencias de Node.js ==='
                 sh """
                 docker run --rm \
-                  -v \$(pwd):/app \
-                  -w /app \
+                  --volumes-from jenkins-local \
+                  -w \$(pwd) \
                   ${NODE_IMAGE} \
                   npm install
                 """
@@ -33,8 +33,8 @@ pipeline {
                 echo '=== Ejecutando Lint, Build y Test para el Frontend ==='
                 sh """
                 docker run --rm \
-                  -v \$(pwd):/app \
-                  -w /app \
+                  --volumes-from jenkins-local \
+                  -w \$(pwd) \
                   ${NODE_IMAGE} \
                   sh -c "npm run build --workspace apps/web && npm run test --workspace apps/web"
                 """
@@ -69,8 +69,8 @@ pipeline {
                 sh """
                 docker run --rm \
                   --network dino-net-${BUILD_NUMBER} \
-                  -v \$(pwd):/app \
-                  -w /app \
+                  --volumes-from jenkins-local \
+                  -w \$(pwd) \
                   -e DATABASE_URL=postgresql://dino:dino@dino-postgres-${BUILD_NUMBER}:5432/dino_test \
                   -e NODE_ENV=test \
                   -e APP_ENV=dev \
@@ -94,8 +94,8 @@ pipeline {
                 echo '=== Ejecutando pruebas E2E con Playwright ==='
                 sh """
                 docker run --rm \
-                  -v \$(pwd):/app \
-                  -w /app \
+                  --volumes-from jenkins-local \
+                  -w \$(pwd) \
                   -e CI=true \
                   ${NODE_IMAGE} \
                   sh -c "npm run e2e:install && npm run e2e"
