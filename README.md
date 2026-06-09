@@ -127,7 +127,7 @@ Convención de commits: **Conventional Commits** (`feat:`, `fix:`, `test:`, `ci:
 |---|---|---|---|
 | 1 | `feature/welcome-and-local-score` | ✅ | Bienvenida, juego, score en `localStorage` |
 | 2 | `feature/api-scores` | ✅ | API REST de scores con PostgreSQL y Prisma |
-| 3 | `feature/frontend-api-integration` | ⏳ | Frontend consume API + ranking |
+| 3 | `feature/frontend-api-integration` | ✅ | Frontend consume API + ranking + E2E con Playwright |
 | 4 | `feature/intentional-score-bug` | ⏳ | Bug controlado + flujo de rollback |
 | 5 | `feature/duck-and-plane-obstacle` | ⏳ | Agacharse y obstáculo aéreo |
 
@@ -199,6 +199,54 @@ Devuelve el score individual o `404` si el nick no existe.
 ```bash
 curl http://localhost:3001/api/scores/player01
 ```
+
+---
+
+## 🛰️ Integración Frontend ↔ API (Iteración 3)
+
+El frontend React consume la API REST a través de un cliente HTTP nativo
+(`fetch` + `AbortController`) envuelto en `src/game/services/scoreApi.ts`.
+El objetivo es ofrecer una experiencia "online-first" con un fallback
+transparente a `localStorage` cuando la API no está disponible.
+
+### Configuración
+
+| Variable | Defecto | Dónde se lee |
+|---|---|---|
+| `VITE_API_BASE_URL` | `http://localhost:3001` | Build time de Vite (sólo variables con prefijo `VITE_`) |
+
+La URL del API se **hornea** en el bundle al compilar el frontend. En
+Docker se inyecta como `ARG` del `Dockerfile` para que cada ambiente
+tenga su propio bundle.
+
+```yaml
+# docker-compose.dev.yml (extracto)
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:3001
+```
+
+### Flujo de datos
+
+1. Al cargar `WelcomePage`, el hook `useLeaderboard` hace `GET /api/scores/top?limit=10`.
+2. Si la API responde, el leaderboard se llena y se muestra el badge **Global**.
+3. Si la API falla (`NETWORK`/`TIMEOUT`/`SERVER`), el hook cae automáticamente
+   a `localStorage` y muestra el badge **Local (offline)** + un aviso amarillo.
+4. En el `GameOverModal`, al guardar el nick se hace `POST /api/scores`:
+   - ✅ `201/200` → guarda en `localStorage` (cache de seguridad) y muestra 🎉.
+   - ⚠️ `VALIDATION` (4xx) → no hace fallback, muestra el mensaje del API.
+   - 📴 `NETWORK`/`TIMEOUT`/`SERVER` → cae a `localStorage` con un `fallbackNotice`.
+
+### Hook de testing (sólo en `import.meta.env.DEV`)
+
+`window.__dino_test__.triggerGameOver(score)` permite que las pruebas E2E
+finalicen una partida sin tener que simular colisiones en el canvas. El
+hook se inyecta en `src/test/testHook.ts` y se **tree-shakea** de los
+bundles de producción.
 
 ---
 
@@ -355,6 +403,27 @@ DATABASE_URL=postgresql://dino:dino@localhost:5432/dino_test \
 npm run test --workspace apps/api
 ```
 
+### Pruebas End-to-End (Playwright)
+
+Los specs E2E ejecutan el frontend con un mock de la API a nivel de red
+(`page.route()`), por lo que **no** necesitan un backend real corriendo.
+
+```bash
+# 1. Instalar los binarios de Chromium (una sola vez por máquina)
+npm run e2e:install
+
+# 2. Ejecutar la suite
+npm run e2e
+```
+
+Los specs viven en `tests/e2e/`:
+
+- `full-flow.spec.ts` — flujo completo: bienvenida → juego → game over → guardar → ver ranking.
+- `api-down.spec.ts` — comportamiento offline: el mock aborta las requests y el frontend cae a `localStorage`.
+
+En CI, el workflow `ci.yml` tiene un job `e2e` que sube como artefactos
+el reporte HTML y el `playwright-report`.
+
 ### Lint
 ```bash
 npm run lint
@@ -367,11 +436,36 @@ npm run lint
 ### `ci.yml`
 - **Web**: `npm run build` + `npm run test` + artefacto `web-dist-dev`.
 - **API**: arranca un servicio `postgres:16` en el runner, aplica migraciones, ejecuta `npm run build` + `npm run test` + artefacto `api-build-dev`.
+- **E2E** (depende de los dos anteriores): instala Chromium, corre `npm run e2e`, sube el `playwright-report` y los resultados.
 
 ### `docker-build.yml`
 - Construye y publica a **GHCR**:
   - `ghcr.io/<repo>/dino-web:dev-{sha}` (más `dev-latest` en `develop` y `latest` en `main`).
   - `ghcr.io/<repo>/dino-api:dev-{sha}` (más `dev-latest` en `develop` y `latest` en `main`).
+
+### `deploy-qa.yml`
+- Trigger: push a `release/**` o `workflow_dispatch`.
+- Publica a **GHCR** con tags `qa-{sha}` + `qa-latest`:
+  - `ghcr.io/<repo>/dino-web:qa-{sha}` (compilado con `VITE_API_BASE_URL` apuntando a la API de QA).
+  - `ghcr.io/<repo>/dino-api:qa-{sha}`.
+  - `ghcr.io/<repo>/dino-migrate:qa-{sha}` (imagen one-shot para correr migraciones).
+- El override de la URL del API se puede sobreescribir con la variable de repo `QA_API_BASE_URL` (default `http://localhost:3002`).
+
+### 🚀 Levantar el ambiente QA localmente
+
+```bash
+docker compose -f docker-compose.qa.yml up --build
+```
+
+| Servicio | Puerto | Notas |
+|---|---|---|
+| `db` | 5433 (host) → 5432 (contenedor) | BD `dino_qa` |
+| `migrate` | — | One-shot, sale con código 0 |
+| `api` | 3002 (host) → 3002 (contenedor) | `APP_ENV=qa` |
+| `web` | 5174 (host) → 80 (contenedor) | Compilado con `VITE_API_BASE_URL=http://localhost:3002` |
+
+Los puertos son distintos de los del ambiente `dev` para permitir correr
+ambos en paralelo sin colisiones.
 
 ---
 

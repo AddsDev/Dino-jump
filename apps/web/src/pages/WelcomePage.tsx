@@ -1,21 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { ScoreRecord } from '../game/types/game.types';
-import { localScoreStorage } from '../game/storage/localScoreStorage';
+import React, { useEffect } from 'react';
+import { useLeaderboard } from '../game/hooks/useLeaderboard';
+import type { ApiScoreRecord } from '../game/types/api.types';
 
 interface WelcomePageProps {
   onStartGame: () => void;
+  refreshKey?: number;
 }
 
-export const WelcomePage: React.FC<WelcomePageProps> = ({ onStartGame }) => {
-  const [leaderboard, setLeaderboard] = useState<ScoreRecord[]>([]);
+export const WelcomePage: React.FC<WelcomePageProps> = ({ onStartGame, refreshKey = 0 }) => {
+  const { entries, source, isLoading, errorMessage, refresh } = useLeaderboard(10);
 
   useEffect(() => {
     // Apply space theme class to body on mount
     document.body.classList.add('space-theme-body');
-
-    // Load top scores
-    const scores = localScoreStorage.getScores().slice(0, 10);
-    setLeaderboard(scores);
 
     return () => {
       // Remove class on unmount
@@ -23,19 +20,16 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStartGame }) => {
     };
   }, []);
 
-  const formatDate = (isoString: string): string => {
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return '';
-    }
-  };
+  useEffect(() => {
+    // Re-fetch when the parent signals a new score has been saved
+    void refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
+
+  const badgeLabel =
+    source === 'api' ? 'Global' : source === 'local' ? 'Local (offline)' : 'Vacío';
+  const badgeColor =
+    source === 'api' ? 'var(--space-orange)' : source === 'local' ? '#fbbf24' : 'var(--space-blue)';
 
   return (
     <div style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '30px' }}>
@@ -153,16 +147,67 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStartGame }) => {
           background: 'var(--space-bg-dark)'
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '12px', flexWrap: 'wrap' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--space-text-primary)' }}>
             📡 Misión Leaderboard
           </h2>
-          <span style={{ fontSize: '11px', color: 'var(--space-blue)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>
-            Registro Local
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span
+              data-testid="leaderboard-source-badge"
+              style={{
+                fontSize: '11px',
+                color: badgeColor,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                fontWeight: 700,
+                border: `1px solid ${badgeColor}`,
+                padding: '4px 10px',
+                borderRadius: '6px',
+              }}
+            >
+              {badgeLabel}
+            </span>
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              data-testid="leaderboard-refresh"
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--space-border)',
+                color: 'var(--space-text-secondary)',
+                borderRadius: '6px',
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                cursor: 'pointer',
+              }}
+            >
+              ↻ Refresh
+            </button>
+          </div>
         </div>
 
-        {leaderboard.length === 0 ? (
+        {errorMessage && source === 'local' && (
+          <p
+            data-testid="leaderboard-error"
+            style={{
+              color: '#fbbf24',
+              fontSize: '12px',
+              marginBottom: '12px',
+              fontWeight: 600,
+            }}
+          >
+            ⚠️ {errorMessage}
+          </p>
+        )}
+
+        {isLoading && entries.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '32px 0', border: '1px dashed var(--space-border)', borderRadius: '12px' }}>
+            <p style={{ color: 'var(--space-text-secondary)', fontSize: '14px' }}>Loading leaderboard…</p>
+          </div>
+        ) : entries.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 0', border: '1px dashed var(--space-border)', borderRadius: '12px' }}>
             <p style={{ color: 'var(--space-text-secondary)', fontSize: '14px' }}>
               No scores recorded yet. Be the first to establish a high score!
@@ -170,20 +215,19 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStartGame }) => {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table className="space-table">
+            <table className="space-table" data-testid="leaderboard-table">
               <thead>
                 <tr>
                   <th style={{ width: '80px' }}>Rank</th>
                   <th>Player Nick</th>
                   <th style={{ textAlign: 'right' }}>Score</th>
-                  <th style={{ textAlign: 'right', width: '180px' }}>Recorded At</th>
                 </tr>
               </thead>
               <tbody>
-                {leaderboard.map((item, index) => {
+                {entries.map((item: ApiScoreRecord, index: number) => {
                   const isTop3 = index < 3;
                   return (
-                    <tr key={item.nick + index}>
+                    <tr key={item.nick + index} data-testid="leaderboard-row">
                       <td style={{ padding: '16px' }}>
                         <span className={`space-rank-number ${index === 0 ? 'space-rank-1' : ''}`}>
                           #{index + 1}
@@ -197,9 +241,6 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStartGame }) => {
                         <span className={`space-score-col ${isTop3 ? 'space-score-top' : ''}`}>
                           {item.score}
                         </span>
-                      </td>
-                      <td style={{ padding: '16px', textAlign: 'right', fontSize: '13px', color: 'var(--space-text-secondary)' }}>
-                        {formatDate(item.date)}
                       </td>
                     </tr>
                   );

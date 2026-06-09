@@ -1,17 +1,17 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: dino-db-dev
+    container_name: dino-db-qa
     environment:
       POSTGRES_USER: dino
       POSTGRES_PASSWORD: dino
-      POSTGRES_DB: dino_dev
+      POSTGRES_DB: dino_qa
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - dino-db-dev-data:/var/lib/postgresql/data
+      - dino-db-qa-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dino -d dino_dev"]
+      test: ["CMD-SHELL", "pg_isready -U dino -d dino_qa"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -21,10 +21,10 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: migrate
-    container_name: dino-migrate-dev
+    container_name: dino-migrate-qa
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://dino:dino@db:5432/dino_dev
+      DATABASE_URL: postgresql://dino:dino@db:5432/dino_qa
     depends_on:
       db:
         condition: service_healthy
@@ -35,15 +35,15 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: runner
-    container_name: dino-api-dev
+    container_name: dino-api-qa
     environment:
-      NODE_ENV: development
-      APP_ENV: dev
-      API_PORT: 3001
-      DATABASE_URL: postgresql://dino:dino@db:5432/dino_dev
-      CORS_ORIGIN: http://localhost:5173
+      NODE_ENV: production
+      APP_ENV: qa
+      API_PORT: 3002
+      DATABASE_URL: postgresql://dino:dino@db:5432/dino_qa
+      CORS_ORIGIN: http://localhost:5174
     ports:
-      - "3001:3001"
+      - "3002:3002"
     depends_on:
       db:
         condition: service_healthy
@@ -56,13 +56,13 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        VITE_API_BASE_URL: http://localhost:3001
-    container_name: dino-web-dev
+        VITE_API_BASE_URL: http://localhost:3002
+    container_name: dino-web-qa
     ports:
-      - "5173:80"
+      - "5174:80"
     depends_on:
       - api
     restart: unless-stopped
 
 volumes:
-  dino-db-dev-data:
+  dino-db-qa-data:
