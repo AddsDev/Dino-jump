@@ -19,5 +19,9 @@ RUN mkdir -p /etc/apt/keyrings && \
 # Instalar el cliente de Docker (docker-ce-cli)
 RUN apt-get update && apt-get install -y docker-ce-cli
 
-# Volver al usuario Jenkins por defecto por seguridad
+# Configurar Git para confiar en todos los directorios (evita errores de safe.directory)
+RUN git config --global --add safe.directory "*"
+
+# Volver al usuario Jenkins por defecto por seguridad e instalar la config de git para él también
 USER jenkins
+RUN git config --global --add safe.directory "*"
