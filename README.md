@@ -343,7 +343,7 @@ git push origin feature/jenkins-integration
    * **Definition**: Selecciona **Pipeline script from SCM**.
    * **SCM**: Selecciona **Git**.
    * **Repository URL**: Escribe la URL de tu repositorio (ej. `https://github.com/tu-usuario/dino-jumper-ci-cd.git`).
-   * **Branch Specifier**: Cambia `*/master` por `*/feature/jenkins-integration`.
+   * **Branch Specifier**: Cambia `*/master` por `*/develop`.
    * **Script Path**: Escribe `Jenkinsfile`.
 4. Guarda los cambios.
 
