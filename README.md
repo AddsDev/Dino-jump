@@ -306,6 +306,51 @@ docker compose -f docker-compose.dev.yml down               # detener
 docker compose -f docker-compose.dev.yml down -v            # detener y borrar volúmenes (BD limpia)
 ```
 
+### 🤖 Integración Local y Pipeline con Jenkins
+
+A continuación, se detalla la guía paso a paso para levantar Jenkins localmente mediante Docker y ejecutar el mismo pipeline de integración continua que GitHub Actions:
+
+#### 1. Levantar el contenedor de Jenkins
+Asegúrate de tener **Docker Desktop** abierto y ejecutándose en tu Mac. Luego, desde la raíz del proyecto, ejecuta:
+```bash
+docker compose -f jenkins/docker-compose.yml up -d --build
+```
+*Esto iniciará Jenkins en segundo plano en el puerto `8080` de tu máquina.*
+
+#### 2. Obtener la contraseña de Administrador
+Una vez que el contenedor esté corriendo, obtén la clave de seguridad inicial con:
+```bash
+docker exec jenkins-local cat /var/jenkins_home/secrets/initialAdminPassword
+```
+*Copia el código de seguridad de la terminal.*
+
+#### 3. Configurar Jenkins en el navegador
+1. Abre tu navegador e ingresa a: **`http://localhost:8080`**.
+2. Introduce la contraseña copiada y haz clic en **Continue**.
+3. Selecciona **"Install suggested plugins"** y espera a que finalice la instalación.
+4. Crea tu usuario administrador y confirma la URL por defecto (`http://localhost:8080`).
+
+#### 4. Subir los cambios a GitHub (Recomendado)
+Para que Jenkins pueda clonar la rama de integración, sube los cambios de la rama a tu repositorio de GitHub:
+```bash
+git push origin feature/jenkins-integration
+```
+
+#### 5. Crear y Configurar el Pipeline en la interfaz de Jenkins
+1. Haz clic en **Nueva Tarea** (New Item) en la parte superior izquierda.
+2. Escribe un nombre descriptivo (ej. `dino-jumper-ci`) y selecciona **Pipeline**, luego haz clic en **OK**.
+3. En la pestaña de configuración del Pipeline, dirígete al final:
+   * **Definition**: Selecciona **Pipeline script from SCM**.
+   * **SCM**: Selecciona **Git**.
+   * **Repository URL**: Escribe la URL de tu repositorio (ej. `https://github.com/tu-usuario/dino-jumper-ci-cd.git`).
+   * **Branch Specifier**: Cambia `*/master` por `*/feature/jenkins-integration`.
+   * **Script Path**: Escribe `Jenkinsfile`.
+4. Guarda los cambios.
+
+#### 6. Ejecutar y Validar el Pipeline
+1. Dentro de la tarea de Jenkins, haz clic en **Construir Ahora** (Build Now).
+2. Abre la compilación iniciada y selecciona **Console Output** para ver la ejecución detallada de todos los pasos (Lint, Build, Migraciones en base de datos Postgres efímera y tests de Playwright).
+
 ### 🛠️ Construcción directa con Docker (sin Compose)
 
 ```bash
