@@ -77,7 +77,7 @@ pipeline {
                   -e API_PORT=3001 \
                   -e CORS_ORIGIN=http://localhost:5173 \
                   ${NODE_IMAGE} \
-                  sh -c "npm run prisma:generate && npm run prisma:deploy && npx prisma migrate status && npm run build --workspace apps/api && npm run test --workspace apps/api"
+                  sh -c "npm run prisma:generate && npm run prisma:deploy && npx prisma migrate status --schema=apps/api/prisma/schema.prisma && npm run build --workspace apps/api && npm run test --workspace apps/api"
                 """
             }
             post {
