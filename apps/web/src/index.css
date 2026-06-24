@@ -1,0 +1,358 @@
+:root {
+  /* Cyberpunk Color Palette */
+  --bg-dark: #0d0e12;
+  --bg-darker: #060709;
+  --neon-teal: #00f2fe;
+  --neon-pink: #ff007f;
+  --neon-purple: #bd00ff;
+  
+  --text-primary: #f5f6fa;
+  --text-secondary: #8f9cae;
+  --text-muted: #536175;
+
+  --glass-bg: rgba(13, 14, 18, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  /* Glowing Shadows */
+  --glow-teal: 0 0 10px rgba(0, 242, 254, 0.4), 0 0 20px rgba(0, 242, 254, 0.2);
+  --glow-pink: 0 0 10px rgba(255, 0, 127, 0.4), 0 0 20px rgba(255, 0, 127, 0.2);
+  --glow-purple: 0 0 10px rgba(189, 0, 255, 0.4), 0 0 20px rgba(189, 0, 255, 0.2);
+
+  /* Fonts */
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+
+  /* Native scrollbar color adaptation (Modern Standard) */
+  scrollbar-color: rgba(189, 0, 255, 0.3) var(--bg-darker);
+  color-scheme: dark;
+}
+
+/* Reset and Layout Rules */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-darker);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(at 10% 20%, rgba(189, 0, 255, 0.08) 0px, transparent 50%),
+    radial-gradient(at 90% 80%, rgba(0, 242, 254, 0.08) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Custom Scrollbar fallback for older WebKit/Safari engines */
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg-darker);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(189, 0, 255, 0.3);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--neon-purple);
+  }
+}
+
+/* Common UI Elements */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+.glow-btn-teal {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #fff;
+  background: transparent;
+  border: 2px solid var(--neon-teal);
+  border-radius: 8px;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  text-shadow: 0 0 4px #fff;
+  box-shadow: var(--glow-teal);
+}
+
+.glow-btn-teal:hover {
+  background: var(--neon-teal);
+  color: var(--bg-darker);
+  box-shadow: 0 0 15px rgba(0, 242, 254, 0.8), 0 0 30px rgba(0, 242, 254, 0.4);
+  text-shadow: none;
+  transform: translateY(-2px);
+}
+
+.glow-btn-teal:active {
+  transform: translateY(1px);
+}
+
+.glow-btn-pink {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #fff;
+  background: transparent;
+  border: 2px solid var(--neon-pink);
+  border-radius: 8px;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  text-shadow: 0 0 4px #fff;
+  box-shadow: var(--glow-pink);
+}
+
+.glow-btn-pink:hover {
+  background: var(--neon-pink);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(255, 0, 127, 0.8), 0 0 30px rgba(255, 0, 127, 0.4);
+  text-shadow: none;
+  transform: translateY(-2px);
+}
+
+.glow-btn-pink:active {
+  transform: translateY(1px);
+}
+
+/* Animations */
+@keyframes pulse-border-purple {
+  0%, 100% {
+    border-color: rgba(189, 0, 255, 0.5);
+    box-shadow: 0 0 5px rgba(189, 0, 255, 0.2);
+  }
+  50% {
+    border-color: var(--neon-purple);
+    box-shadow: var(--glow-purple);
+  }
+}
+
+.pulse-purple-border {
+  animation: pulse-border-purple 3s infinite;
+}
+
+/* Title text glows */
+.neon-text-teal {
+  color: var(--neon-teal);
+  text-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
+}
+
+.neon-text-pink {
+  color: var(--neon-pink);
+  text-shadow: 0 0 8px rgba(255, 0, 127, 0.6);
+}
+
+.neon-text-purple {
+  color: var(--neon-purple);
+  text-shadow: 0 0 8px rgba(189, 0, 255, 0.6);
+}
+
+/* ==========================================================================
+   ASTRONAUT LOW-POLY SPACE EXPLORER THEME (Welcome Screen Specific)
+   ========================================================================== */
+:root {
+  --space-bg-dark: #0f1720;
+  --space-bg-darker: #080c10;
+  --space-surface: #253140;
+  --space-surface-light: #334155;
+  --space-text-primary: #f3f4f6;
+  --space-text-secondary: #cbd5e1;
+  --space-orange: #d9a066;
+  --space-orange-hover: #e4ae77;
+  --space-blue: #8fafc7;
+  --space-border: rgba(143, 175, 199, 0.15);
+  --space-border-light: rgba(143, 175, 199, 0.3);
+}
+
+/* Base style mapping when welcome screen is mounted */
+.space-theme-body {
+  background-color: var(--space-bg-darker) !important;
+  background-image: 
+    radial-gradient(at 20% 20%, rgba(143, 175, 199, 0.04) 0px, transparent 60%),
+    radial-gradient(at 80% 80%, rgba(217, 160, 102, 0.03) 0px, transparent 60%) !important;
+}
+
+/* Low-Poly Space Card */
+.space-card {
+  background: var(--space-bg-dark);
+  border: 1px solid var(--space-border);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  padding: 48px 32px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s ease;
+}
+
+.space-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--space-blue) 0%, var(--space-orange) 100%);
+}
+
+.space-card:hover {
+  border-color: var(--space-border-light);
+}
+
+/* Space Title */
+.space-title {
+  font-family: var(--font-sans);
+  color: var(--space-text-primary);
+  font-size: 58px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  line-height: 1.1;
+}
+
+.space-title-highlight {
+  color: var(--space-orange);
+}
+
+.space-subtitle {
+  color: var(--space-text-secondary);
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 540px;
+  margin: 0 auto 36px auto;
+}
+
+/* Geometric Astronaut Badge */
+.space-badge {
+  display: inline-block;
+  padding: 5px 14px;
+  background-color: rgba(143, 175, 199, 0.08);
+  border: 1px solid var(--space-border);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--space-blue);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+/* Astronaut Space Button */
+.space-btn-orange {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--space-bg-darker);
+  background: var(--space-orange);
+  border: none;
+  border-radius: 8px;
+  padding: 16px 38px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(217, 160, 102, 0.2);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.space-btn-orange:hover {
+  background: var(--space-orange-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(217, 160, 102, 0.35);
+}
+
+.space-btn-orange:active {
+  transform: translateY(1px);
+}
+
+/* space keystroke instruction tags */
+.space-key-tag {
+  display: inline-block;
+  padding: 5px 12px;
+  background-color: var(--space-surface);
+  border: 1px solid var(--space-border);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  color: var(--space-text-primary);
+  font-weight: bold;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+/* Leaderboard Clean Space Table */
+.space-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.space-table th {
+  color: var(--space-blue);
+  padding: 14px 16px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-bottom: 1px solid var(--space-border);
+  font-weight: 700;
+}
+
+.space-table tr {
+  border-bottom: 1px solid rgba(143, 175, 199, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+.space-table tr:hover {
+  background-color: rgba(143, 175, 199, 0.02);
+}
+
+.space-table td {
+  padding: 14px 16px;
+  font-size: 14px;
+}
+
+.space-rank-number {
+  font-weight: bold;
+  color: var(--space-blue);
+}
+
+.space-rank-1 {
+  color: var(--space-orange) !important;
+}
+
+.space-rank-champion-tag {
+  margin-left: 8px;
+  font-size: 9px;
+  background-color: rgba(217, 160, 102, 0.1);
+  border: 1px solid rgba(217, 160, 102, 0.25);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--space-orange);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.space-score-col {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  color: var(--space-text-primary);
+  font-weight: bold;
+}
+
+.space-score-top {
+  color: var(--space-orange);
+}
+

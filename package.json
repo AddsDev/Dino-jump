@@ -1,0 +1,35 @@
+{
+  "name": "dino-runner-cicd",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Arcade Dino game designed to demonstrate CI/CD workflows and Docker containerization.",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "dev": "npm run dev --workspace apps/web",
+    "dev:api": "npm run dev --workspace apps/api",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "prisma:generate": "npm run prisma:generate --workspace apps/api",
+    "prisma:migrate": "npm run prisma:migrate --workspace apps/api",
+    "prisma:deploy": "npm run prisma:deploy --workspace apps/api",
+    "e2e": "playwright test --config=tests/e2e/playwright.config.ts",
+    "e2e:install": "playwright install --with-deps chromium"
+  },
+  "keywords": [
+    "dino-runner",
+    "react",
+    "docker",
+    "github-actions",
+    "ci-cd"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
+  }
+}

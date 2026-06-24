@@ -1,0 +1,53 @@
+language: node_js
+node_js:
+  - "20"
+
+dist: jammy
+
+services:
+  - docker
+  - postgresql
+
+cache:
+  directories:
+    - ~/.npm
+    - ~/.cache/ms-playwright
+
+stages:
+  - name: validation
+  - name: e2e
+
+jobs:
+  include:
+    - stage: validation
+      name: "Web - Build & Test"
+      script:
+        - npm run build --workspace apps/web
+        - npm run test --workspace apps/web
+
+    - stage: validation
+      name: "API - Build & Test"
+      env:
+        - DATABASE_URL=postgresql://dino:dino@localhost:5432/dino_test
+        - NODE_ENV=test
+        - APP_ENV=dev
+        - API_PORT=3001
+        - CORS_ORIGIN=http://localhost:5173
+      before_script:
+        - psql -c "CREATE USER dino WITH PASSWORD 'dino' SUPERUSER;" -U postgres
+        - psql -c "CREATE DATABASE dino_test OWNER dino;" -U postgres
+        - npm run prisma:generate
+        - npm run prisma:deploy
+        - npx prisma migrate status --schema=apps/api/prisma/schema.prisma
+      script:
+        - npm run build --workspace apps/api
+        - npm run test --workspace apps/api
+
+    - stage: e2e
+      name: "Web - E2E Playwright"
+      env:
+        - CI=true
+      before_script:
+        - npm run e2e:install
+      script:
+        - npm run e2e
